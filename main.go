@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ var (
 type GithubRelease struct {
 	PublishedAt string `json:"published_at"`
 	TarballURL  string `json:"tarball_url"`
+	TagName     string `json:"tag_name"`
 }
 
 func main() {
@@ -44,15 +46,15 @@ func main() {
 	// https://api.github.com/repos/${REPO}/releases?per_page=${PER_PAGE}&page=${PAGE}
 	client := resty.New()
 	defer client.Close()
-	releaseURL, err := getReleaseByDate(client, "minio/mc", convertReleaseStr(*minioRelease))
+	tagName, err := getReleaseByDate(client, "minio/mc", convertReleaseStr(*minioRelease))
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	log.Printf("found the release url: %s", releaseURL)
-	if err = downloadTarball(client, releaseURL); err != nil {
-		log.Fatalf(err.Error())
+	log.Printf("found the tag name: %s, write to /tmp/mc.txt", tagName)
+	err = os.WriteFile("/tmp/mc.txt", []byte(tagName), 0644)
+	if err != nil {
+		panic(err)
 	}
-	log.Printf("download mc source success")
 }
 
 func getReleaseByDate(client *resty.Client, repo, dateStr string) (string, error) {
@@ -86,7 +88,7 @@ func getReleaseByDate(client *resty.Client, repo, dateStr string) (string, error
 			}
 			// The first one that is earlier than the input date is the release we need.
 			if tmp <= inputDateUnix {
-				return item.TarballURL, nil
+				return item.TagName, nil
 			}
 		}
 		startPage += maxPerPage
@@ -115,18 +117,4 @@ func convertReleaseStr(s string) string {
 	// Replace the '-' in timePart with ':'.
 	timePart = strings.ReplaceAll(timePart, "-", ":")
 	return datePart + "T" + timePart
-}
-
-func downloadTarball(client *resty.Client, url string) error {
-	res, err := client.R().
-		SetSaveResponse(true).
-		SetOutputFileName(tarbarFileName).
-		Get(url)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("download tarball, status code is not %d", res.StatusCode())
-	}
-	return nil
 }
