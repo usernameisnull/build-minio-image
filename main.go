@@ -17,6 +17,7 @@ const (
 	minioReleasePrefix = "RELEASE."
 	initPage           = 1
 	maxPerPage         = 100
+	tarbarFileName     = "/tmp/mc.tar.gz"
 )
 
 var (
@@ -43,11 +44,15 @@ func main() {
 	// https://api.github.com/repos/${REPO}/releases?per_page=${PER_PAGE}&page=${PAGE}
 	client := resty.New()
 	defer client.Close()
-	releaseName, err := getReleaseByDate(client, "minio/mc", convertReleaseStr(*minioRelease))
+	releaseURL, err := getReleaseByDate(client, "minio/mc", convertReleaseStr(*minioRelease))
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	log.Printf("found the release name: %s", releaseName)
+	log.Printf("found the release url: %s", releaseURL)
+	if err = downloadTarball(client, releaseURL); err != nil {
+		log.Fatalf(err.Error())
+	}
+	log.Printf("download mc source success")
 }
 
 func getReleaseByDate(client *resty.Client, repo, dateStr string) (string, error) {
@@ -110,4 +115,18 @@ func convertReleaseStr(s string) string {
 	// Replace the '-' in timePart with ':'.
 	timePart = strings.ReplaceAll(timePart, "-", ":")
 	return datePart + "T" + timePart
+}
+
+func downloadTarball(client *resty.Client, url string) error {
+	res, err := client.R().
+		SetSaveResponse(true).
+		SetOutputFileName(tarbarFileName).
+		Get(url)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("download tarball, status code is not %d", res.StatusCode())
+	}
+	return nil
 }
