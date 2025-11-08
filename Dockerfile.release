@@ -1,0 +1,65 @@
+FROM golang:1.24-alpine AS build
+
+ARG TARGETARCH
+ARG RELEASE
+
+ENV GOPATH=/go
+ENV CGO_ENABLED=0
+
+WORKDIR /build
+
+RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.tuna.tsinghua.edu.cn/alpine|g' /etc/apk/repositories \
+    && apk update \
+    && apk add --no-cache git openssh ca-certificates \
+    && update-ca-certificates \
+
+# 可选：设置 Go 模块代理为中国镜像（加快 go mod 下载速度）
+ENV GOPROXY=https://goproxy.cn,direct
+
+# Install curl and minisign
+RUN apk add -U --no-cache ca-certificates && \
+    apk add -U --no-cache curl && \
+    apk add -U --no-cache bash
+
+
+# Download minio binary and signature files
+RUN curl -s -q https://dl.min.io/server/minio/release/linux-${TARGETARCH}/archive/minio.${RELEASE} -o /go/bin/minio && \
+    chmod +x /go/bin/minio
+
+# Download mc binary and signature files
+# 这里拉取的就是最新的: https://dl.min.io/client/mc/release/linux-amd64/mc
+
+#@GO111MODULE=on GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) CGO_ENABLED=0 go build -trimpath -tags kqueue --ldflags "$(LDFLAGS)" -o $(PWD)/mc
+RUN curl -s -q https://dl.min.io/client/mc/release/linux-${TARGETARCH}/mc -o /go/bin/mc && \
+    chmod +x /go/bin/mc
+
+COPY dockerscripts/download-static-curl.sh /build/download-static-curl
+RUN chmod +x /build/download-static-curl && \
+    /build/download-static-curl
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+
+ARG RELEASE
+
+ENV MINIO_ACCESS_KEY_FILE=access_key \
+    MINIO_SECRET_KEY_FILE=secret_key \
+    MINIO_ROOT_USER_FILE=access_key \
+    MINIO_ROOT_PASSWORD_FILE=secret_key \
+    MINIO_KMS_SECRET_KEY_FILE=kms_master_key \
+    MINIO_CONFIG_ENV_FILE=config.env \
+    MC_CONFIG_DIR=/tmp/.mc
+
+RUN chmod -R 777 /usr/bin
+
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /go/bin/minio* /usr/bin/
+COPY --from=build /go/bin/mc* /usr/bin/
+COPY --from=build /go/bin/curl* /usr/bin/
+
+COPY dockerscripts/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+
+EXPOSE 9000
+VOLUME ["/data"]
+
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+CMD ["minio"]
