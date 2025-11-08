@@ -14,7 +14,7 @@ function _clone() {
        exit 1
    fi
    rm -rf ${CLONE_DIR}
-   git clone --branch ${1} --depth 1 git@github.com:minio/${COMPONENT}.git ${CLONE_DIR}
+   git clone --branch ${1} --depth 1 https://github.com/minio/${COMPONENT}.git ${CLONE_DIR}
 }
 
 main "$@" ${COMPONENT}

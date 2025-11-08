@@ -16,7 +16,7 @@ function _clone() {
    fi
    rm -rf ${CLONE_DIR} ${RELEASE_VERSION_FILE}
    go run main.go -minio_release=${1}
-   git clone --branch $(cat ${RELEASE_VERSION_FILE}) --depth 1 git@github.com:minio/${COMPONENT}.git ${CLONE_DIR}
+   git clone --branch $(cat ${RELEASE_VERSION_FILE}) --depth 1 https://github.com/minio/${COMPONENT}.git ${CLONE_DIR}
 }
 
 main "$@" ${COMPONENT}
