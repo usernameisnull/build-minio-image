@@ -12,7 +12,6 @@ function _clone() {
        echo "Usage: $0 <minio release> (e.g.  RELEASE.2025-09-07T16-13-09Z)"
        exit 1
    fi
-   rm -rf ${CLONE_DIR}
    git clone --branch ${1} --depth 1 https://github.com/minio/${COMPONENT}.git ${CLONE_DIR}
 }
 

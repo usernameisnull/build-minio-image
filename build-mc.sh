@@ -13,7 +13,6 @@ function _clone() {
        echo "Usage: $0 <minio release> (e.g.  RELEASE.2025-09-07T16-13-09Z)"
        exit 1
    fi
-   rm -rf ${CLONE_DIR} ${RELEASE_VERSION_FILE}
    go run main.go -minio_release=${1}
    git clone --branch $(cat ${RELEASE_VERSION_FILE}) --depth 1 https://github.com/minio/${COMPONENT}.git ${CLONE_DIR}
 }
