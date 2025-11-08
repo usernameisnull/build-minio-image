@@ -34,9 +34,8 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /tmp/build/minio* /usr/bin/
 COPY --from=build /tmp/build/mc* /usr/bin/
 COPY --from=build /go/bin/curl* /usr/bin/
-
-RUN cp /tmp/minio/dockerscripts/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh && \
-    chmod +x /usr/bin/docker-entrypoint.sh
+COPY --from=build /tmp/minio/dockerscripts/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+RUN chmod +x /usr/bin/docker-entrypoint.sh
 
 EXPOSE 9000
 VOLUME ["/data"]
