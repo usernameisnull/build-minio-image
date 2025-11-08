@@ -1,14 +1,12 @@
 FROM golang:1.24-alpine AS build
-
+ARG MINIO_VERSION=RELEASE.2024-06-01T00-00-00Z
+ENV MINIO_VERSION=${MINIO_VERSION}
 #ENV GOPROXY=https://goproxy.cn,direct
 
 WORKDIR /build-minio-image
 
-RUN #sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.tuna.tsinghua.edu.cn/alpine|g' /etc/apk/repositories \
 RUN apk update  && \
-    apk add -U --no-cache git ca-certificates && \
-    apk add -U --no-cache curl && \
-    apk add -U --no-cache bash
+    apk add -U --no-cache git openssh ca-certificates curl bash
 
 COPY . .
 RUN chmod +x build.sh && bash build.sh
