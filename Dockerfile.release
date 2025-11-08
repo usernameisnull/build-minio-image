@@ -5,8 +5,10 @@ ENV MINIO_VERSION=${MINIO_VERSION}
 
 WORKDIR /build-minio-image
 
+# cp ca-certificates.crt is to prevent permission errors when running git clone.
 RUN apk update  && \
-    apk add -U --no-cache git openssh ca-certificates curl bash
+    apk add -U --no-cache git openssh ca-certificates curl bash && \
+    cp /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 COPY . .
 RUN chmod +x build.sh && bash build.sh
