@@ -1,6 +1,7 @@
 FROM golang:1.24-alpine AS build
 # download-static-curl.sh need this ENV
 ARG TARGETARCH
+# github will automantically set TARGETARCH
 ENV TARGETARCH=${TARGETARCH}
 ARG MINIO_VERSION=RELEASE.2024-06-01T00-00-00Z
 ENV MINIO_VERSION=${MINIO_VERSION}
