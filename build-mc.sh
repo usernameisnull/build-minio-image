@@ -5,7 +5,6 @@ source ./base.sh
 
 COMPONENT='mc'
 CLONE_DIR="/tmp/${COMPONENT}"
-BUILD_DIR="/tmp/build/${COMPONENT}"
 RELEASE_VERSION_FILE="/tmp/${COMPONENT}.txt"
 export MC_RELEASE='RELEASE'
 

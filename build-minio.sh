@@ -5,7 +5,6 @@ source ./base.sh
 
 COMPONENT='minio'
 CLONE_DIR="/tmp/${COMPONENT}"
-BUILD_DIR="/tmp/build/${COMPONENT}"
 export MINIO_RELEASE='RELEASE'
 
 function _clone() {

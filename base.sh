@@ -1,4 +1,4 @@
-
+BUILD_DIR="/tmp/build"
 function _build() {
 	local component=$1
 
