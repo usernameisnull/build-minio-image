@@ -36,7 +36,7 @@ func runDailyJob() {
 	}
 	diff, _ := lo.Difference(minioPublishedTags, ghcrImageTags)
 	log.Println("✅ the image to build:", diff)
-	err = os.WriteFile("/tmp/daily-job.txt", []byte(strings.Join(diff, "\n")), 0644)
+	err = os.WriteFile("/tmp/daily-job.txt", []byte(strings.Join(diff, "\n")+"\n"), 0644)
 	if err != nil {
 		panic(err)
 	}
