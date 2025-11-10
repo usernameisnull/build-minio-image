@@ -1,4 +1,4 @@
-name: build-manually.yml
+name: build-specified-image-manually
 
 on:
   workflow_dispatch:
