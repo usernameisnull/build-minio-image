@@ -27,6 +27,7 @@ var (
 	// Only the first 1000 results are available.
 	repoURL                 = "https://api.github.com/repos/%s/releases?per_page=%d&page=%d"
 	maybeTheLastError error = errors.New("maybe the last page, return code: 422")
+	client                  = resty.New()
 )
 
 type GithubRelease struct {
@@ -36,17 +37,36 @@ type GithubRelease struct {
 }
 
 func main() {
-	var minioRelease = flag.String("minio_release", "", "Specify the MinIO release version or tag")
+	var (
+		minioRelease = flag.String("minio_release", "", "The tag corresponding to a specific release on the MinIO release page.")
+		dailyJob     = flag.Bool("daily_job", false, "Run daily-job logic (mutually exclusive with -minio_release)")
+	)
 	flag.Parse()
-	if *minioRelease != "" {
+
+	// Mutual exclusion check
+	if *minioRelease != "" && *dailyJob {
+		log.Fatalf("flag -minio_release and -daily_job are mutually exclusive")
+	}
+
+	switch {
+	case *dailyJob:
+		log.Println("daily_job mode enabled")
+		runDailyJob()
+	case *minioRelease != "":
 		log.Printf("MinIO release version: %s\n", *minioRelease)
-	} else {
-		log.Println("MinIO release version not specified")
+		runManuallyBuildImage(*minioRelease)
+	default:
+		log.Println("neither -minio_release nor -daily_job specified")
 	}
 	// https://api.github.com/repos/${REPO}/releases?per_page=${PER_PAGE}&page=${PAGE}
-	client := resty.New()
 	defer client.Close()
-	tagName, err := getReleaseByDate(client, "minio/mc", convertReleaseStr(*minioRelease))
+}
+
+func runManuallyBuildImage(s string) {
+	if err := checkMinioTagExists(s); err != nil {
+		log.Fatalf(err.Error())
+	}
+	tagName, err := getReleaseByDate("minio/mc", convertReleaseStr(s))
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -56,8 +76,22 @@ func main() {
 		panic(err)
 	}
 }
+func checkMinioTagExists(tagName string) error {
+	minioTagURL := "https://api.github.com/repos/minio/minio/git/ref/tags/%s"
+	res, err := client.R().
+		SetHeader("Accept", "application/vnd.github.v3+json").
+		Get(fmt.Sprintf(minioTagURL, tagName))
+	if err != nil {
+		return err
+	}
+	resCode := res.StatusCode()
+	if resCode != http.StatusOK {
+		return fmt.Errorf("status code is not %d", http.StatusOK)
+	}
+	return nil
+}
 
-func getReleaseByDate(client *resty.Client, repo, dateStr string) (string, error) {
+func getReleaseByDate(repo, dateStr string) (string, error) {
 	inputDateUnix, err := parseDateStr(dateStr)
 	if err != nil {
 		log.Fatalf("invalid input date string format: '%s', expect format: '%s'", dateStr, timeFormat)
