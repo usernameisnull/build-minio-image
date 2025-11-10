@@ -28,14 +28,14 @@ func runDailyJob() {
 	// get all minio releases and compare with the image we have published in the ghcr.io registry
 	minioPublishedTags, err := getAllMinioReleasesUntilLast("minio/minio", convertReleaseStr(lastImageMinioPublished))
 	if err != nil {
-		log.Fatalf("get all released tags from minio faild, err: %s", err)
+		log.Fatalf("❌ get all released tags from minio faild, err: %s", err)
 	}
 	ghcrImageTags, err := getAllPublishedImageTagsInGhcr()
 	if err != nil {
-		log.Fatalf("get all released tags in ghcr faild, err: %s", err)
+		log.Fatalf("❌ get all released tags in ghcr faild, err: %s", err)
 	}
 	diff, _ := lo.Difference(minioPublishedTags, ghcrImageTags)
-	log.Println("the image to build:", diff)
+	log.Println("✅ the image to build:", diff)
 	err = os.WriteFile("/tmp/daily-job.txt", []byte(strings.Join(diff, "\n")), 0644)
 	if err != nil {
 		panic(err)
@@ -45,7 +45,7 @@ func runDailyJob() {
 func getAllMinioReleasesUntilLast(repo, dateStr string) ([]string, error) {
 	inputDateUnix, err := parseDateStr(dateStr)
 	if err != nil {
-		log.Fatalf("invalid input date string format: '%s', expect format: '%s'", dateStr, timeFormat)
+		log.Fatalf("❌ invalid input date string format: '%s', expect format: '%s'", dateStr, timeFormat)
 	}
 	releases := []GithubRelease{}
 	startPage := initPage
@@ -84,9 +84,9 @@ func getAllMinioReleasesUntilLast(repo, dateStr string) ([]string, error) {
 }
 
 func getAllPublishedImageTagsInGhcr() ([]string, error) {
-	token := os.Getenv("GITHUB_TOKEN")
+	token := os.Getenv("GH_TOKEN")
 	if token == "" {
-		log.Fatal("❌ GITHUB_TOKEN environment variable is not set")
+		log.Fatal("❌ GH_TOKEN environment variable is not set")
 	}
 	url := "https://api.github.com/users/usernameisnull/packages/container/minio/versions?per_page=%d&page=%d"
 	startPage := initPage

@@ -45,18 +45,18 @@ func main() {
 
 	// Mutual exclusion check
 	if *minioRelease != "" && *dailyJob {
-		log.Fatalf("flag -minio_release and -daily_job are mutually exclusive")
+		log.Fatalf("❌ flag -minio_release and -daily_job are mutually exclusive")
 	}
 
 	switch {
 	case *dailyJob:
-		log.Println("daily_job mode enabled")
+		log.Println("✅ daily_job mode enabled")
 		runDailyJob()
 	case *minioRelease != "":
-		log.Printf("MinIO release version: %s\n", *minioRelease)
+		log.Printf("✅ MinIO release version: %s\n", *minioRelease)
 		runManuallyBuildImage(*minioRelease)
 	default:
-		log.Println("neither -minio_release nor -daily_job specified")
+		log.Fatalln("❌ neither -minio_release nor -daily_job specified")
 	}
 	// https://api.github.com/repos/${REPO}/releases?per_page=${PER_PAGE}&page=${PAGE}
 	defer client.Close()
@@ -64,13 +64,13 @@ func main() {
 
 func runManuallyBuildImage(s string) {
 	if err := checkMinioTagExists(s); err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("❌ check minio tag %s failed: %s", s, err.Error())
 	}
 	tagName, err := getReleaseByDate("minio/mc", convertReleaseStr(s))
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("❌ get the mc version closest to the release date of MinIO version %s failed: %s", s, err.Error())
 	}
-	log.Printf("found the tag name: %s, write to /tmp/mc.txt", tagName)
+	log.Printf("✅ found the tag name: %s, write to /tmp/mc.txt", tagName)
 	err = os.WriteFile("/tmp/mc.txt", []byte(tagName), 0644)
 	if err != nil {
 		panic(err)
@@ -94,7 +94,7 @@ func checkMinioTagExists(tagName string) error {
 func getReleaseByDate(repo, dateStr string) (string, error) {
 	inputDateUnix, err := parseDateStr(dateStr)
 	if err != nil {
-		log.Fatalf("invalid input date string format: '%s', expect format: '%s'", dateStr, timeFormat)
+		log.Fatalf("❌ invalid input date string format: '%s', expect format: '%s'", dateStr, timeFormat)
 	}
 	releases := []GithubRelease{}
 	startPage := initPage
@@ -117,7 +117,7 @@ func getReleaseByDate(repo, dateStr string) (string, error) {
 		for _, item := range releases {
 			tmp, err := parseDateStr(item.PublishedAt)
 			if err != nil {
-				log.Printf("'%s' parse error: %s", item.PublishedAt, err)
+				log.Printf("❌ '%s' parse error: %s", item.PublishedAt, err)
 				continue
 			}
 			// The first one that is earlier than the input date is the release we need.
@@ -142,7 +142,7 @@ func convertReleaseStr(s string) string {
 	res := strings.TrimPrefix(s, minioReleasePrefix)
 	parts := strings.SplitN(res, "T", 2)
 	if len(parts) != 2 {
-		log.Fatalf("invalid input date minio release: '%s', expect format: '%s', "+
+		log.Fatalf("❌ invalid input date minio release: '%s', expect format: '%s', "+
 			"check the minio release page: https://github.com/minio/minio/releases",
 			s, minioReleasePrefix+"."+timeFormat)
 	}
