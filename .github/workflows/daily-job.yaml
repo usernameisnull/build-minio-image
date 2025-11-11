@@ -1,7 +1,7 @@
 name: daily-job
 on:
   schedule:
-    - cron: '30 8 * * *'   # 08:30
+    - cron: '30 0 * * *'   # always utc time here
   workflow_dispatch:
 permissions:
   actions: write
