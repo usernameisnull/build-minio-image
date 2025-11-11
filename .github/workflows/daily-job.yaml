@@ -27,7 +27,12 @@ jobs:
       - name: invoke build-manually pipeline
         run: |
           while IFS= read -r tag || [[ -n "$tag" ]]; do
+            if [[ -z "$tag" ]]; then
+              echo "empty tag, skip"
+              continue
+            fi
             echo "Triggering build for $tag"
+            # workflows/build-specified-image-manually.yml, here must be the file name, not the name field 
             curl -s -X POST \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer $GH_TOKEN" \
