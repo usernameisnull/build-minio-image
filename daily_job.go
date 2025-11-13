@@ -64,7 +64,7 @@ func getAllMinioReleasesUntilLast(repo, dateStr string) ([]string, error) {
 			return nil, maybeTheLastError
 		}
 		if resCode != http.StatusOK {
-			return nil, fmt.Errorf("status code is not %d", resCode)
+			return nil, fmt.Errorf("status code is %d", resCode)
 		}
 		for _, item := range releases {
 			tagNameTimestamp, err := parseDateStr(convertReleaseStr(item.TagName))
